@@ -1,0 +1,65 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-api:
+    name: Test backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: startkod/api/package-lock.json
+
+      - name: Install dependencies
+        working-directory: startkod/api
+        run: npm ci
+
+      - name: Run tests
+        working-directory: startkod/api
+        run: npm test
+
+  test-frontend:
+    name: Test & build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: startkod/frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: startkod/frontend
+        run: npm ci
+
+      - name: Run tests
+        working-directory: startkod/frontend
+        run: npm test
+
+      - name: Build
+        working-directory: startkod/frontend
+        run: npm run build
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: [test-api, test-frontend]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy (konfigureras i steg 4)
+        run: echo "Alla tester godkända – deploy sker här i steg 4."
