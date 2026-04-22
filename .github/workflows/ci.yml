@@ -61,7 +61,6 @@ jobs:
     needs: [test-api, test-frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy (konfigureras i steg 4)
-        run: echo "Alla tester godkända – deploy sker här i steg 4."
+      - name: Trigger Render deploy
+        run: |
+          curl --fail -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
