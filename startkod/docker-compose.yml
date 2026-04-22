@@ -1,0 +1,16 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=${PORT:-3000}
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
