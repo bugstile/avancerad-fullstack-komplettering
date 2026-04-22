@@ -12,3 +12,9 @@ test('GET / svarar med Content-Type application/json', async () => {
   expect(res.headers['content-type']).toMatch(/application\/json/);
   expect(res.body).toHaveProperty('timestamp');
 });
+
+test('GET /health svarar med status 200 och status: ok', async () => {
+  const res = await request(app).get('/health');
+  expect(res.statusCode).toBe(200);
+  expect(res.body.status).toBe('ok');
+});
