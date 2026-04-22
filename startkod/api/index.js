@@ -12,3 +12,5 @@ app.get('/', (req, res) => {
 app.listen(port, HOST, () => {
   console.log(`API lyssnar på ${HOST}:${port}`);
 });
+
+module.exports = app;
