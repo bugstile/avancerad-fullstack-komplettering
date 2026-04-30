@@ -64,3 +64,19 @@ jobs:
       - name: Trigger Render deploy
         run: |
           curl --fail -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+
+  codeql:
+    name: CodeQL-analys
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
