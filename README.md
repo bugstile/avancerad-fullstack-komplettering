@@ -1,20 +1,35 @@
 # Komplettering – Avancerad fullstackutveckling
 
-Vad du ska göra för att uppfylla kraven för **Godkänt (G)**: bygga och driftsätta en fullstack-app (minst frontend + backend) med Docker och CI/CD. Du får använda **valfri molntjänst** (t.ex. Docker Hub + Render, Railway, Fly.io, Netlify, Vercel). Azure är inte krav.
+## Projektstruktur
 
-**Utgångspunkt:** Du kan **klona detta projekt** och utgå från mappen **startkod** (minimal API + React-frontend). Vill du hellre **skapa ett eget projekt** eller **använda ett befintligt** du redan har går det lika bra – då gäller samma steg och krav nedan.
-
-**Sitter du fast på ett steg?** I [uppgiftsdokumentet (Google Docs)](https://docs.google.com/document/d/1_NtPv6DK0t9qTHsP3yxNwMRPvawFJOco-kbUXuB5Q1w/edit?tab=t.jir9y9kfblgv#heading=h.eaqjobi3vv2) finns kursens uppgifter samlade med mer beskrivning och guider – använd det som stöd om du behöver mer hjälp att lösa något.
+```
+startkod/
+  api/         Express-backend (Node.js)
+  frontend/    React-frontend (Vite)
+  docker-compose.yml
+  .env.example
+.github/
+  workflows/
+    ci.yml     CI/CD-pipeline
+```
 
 ---
 
-## Om du använder startkoden
+## Köra lokalt med Docker
 
-Mappen **startkod** innehåller en minimal fullstack-app (API + frontend) att utgå från. Fokus ligger på DevOps-flödet – inte på applogik.
+Kräver Docker Desktop.
 
-**Innehåll:** `api/` (Express, en route `GET /`), `frontend/` (Vite + React som anropar API), `.env.example`.
+```bash
+cd startkod
+cp .env.example .env
+docker-compose up --build
+```
 
-**Kör lokalt utan Docker** (två terminaler):
+- Frontend: http://localhost
+- API: http://localhost:3000
+- Hälsokontroll: http://localhost:3000/health
+
+### Köra utan Docker
 
 ```bash
 # Terminal 1 – API
@@ -24,109 +39,109 @@ cd startkod/api && npm install && npm start
 cd startkod/frontend && npm install && npm run dev
 ```
 
-Frontend: http://localhost:5173 · API: http://localhost:3000
+---
 
-**Det som inte ingår** – du ska lägga till själv: Docker (Dockerfile(s) och docker-compose), automatiserade tester, health check-endpoint.
+## Tjänster
+
+| Tjänst | Teknik | Port |
+|---|---|---|
+| `api` | Express + Node.js | 3000 |
+| `frontend` | React + Vite + nginx | 80 |
+
+Frontend-containern kör nginx som reverse-proxar `/api/` → `http://api:3000/` internt, så webbläsaren aldrig behöver känna till backend-hostnamnet direkt.
 
 ---
 
-## Steg 1: Docker och mikrotjänster
+## Tester
 
-**Mål:** Appen ska köras lokalt med Docker Compose som minst två tjänster.
+```bash
+# Backend (Jest + Supertest)
+cd startkod/api && npm test
 
-- Skapa en Dockerfile för backend (API). Bygg och kör den lokalt med `docker build` och `docker run` så att API:et svarar.
-- Skapa en Dockerfile för frontend. Bygg och kör den så att frontend kan anropas i webbläsaren.
-- Skapa en `docker-compose.yml` i projektets rot. Lägg till båda tjänsterna under `services`. Se till att frontend kan anropa backend (använd tjänstnamnet som host, t.ex. `http://api:3000`).
-- Använd en `.env`-fil för känslig konfiguration (t.ex. databas-URL, port). Referera till variablerna i `docker-compose.yml` med `${VARIABELNAMN}`. Lägg inte `.env` i Git.
-- Kör `docker-compose up` och verifiera att både frontend och backend fungerar lokalt.
-
----
-
-## Steg 2: Automatiserade tester
-
-**Mål:** Minst ett test för frontend och ett för backend som pipelinen kan köra.
-
-- I backend: Lägg till ett enhetstest (t.ex. med Jest) som körs med `npm test`. Se till att `package.json` har scriptet `"test": "..."`.
-- I frontend: Lägg till minst ett test (t.ex. för en komponent) som körs med `npm test`.
-- Kör båda testerna lokalt och se till att de går igenom.
+# Frontend (Vitest + Testing Library)
+cd startkod/frontend && npm test
+```
 
 ---
 
-## Steg 3: CI/CD-pipeline
+## Driftsatt app
 
-**Mål:** Automatisk build, test och deployment; deploy ska bara ske om alla tester godkänns.
-
-- Skapa en workflow-fil (t.ex. `.github/workflows/ci.yml`) som triggas vid push till `main` (eller din huvudbranch).
-- I pipelinen: Checka ut koden, installera beroenden för frontend och backend, kör `npm test` för båda. Lägg till steg som bygger projektet (t.ex. `npm run build` där det finns).
-- Se till att deployment-steget **endast** körs om alla tidigare steg lyckas. Om ett test faller ska inget deployas.
-- (Valfritt) Låt samma pipeline även köras vid Pull Request mot `main` så att man ser att allt är grönt innan merge.
-- Pusha och kontrollera under Actions att pipelinen körs och att den blir röd om du medvetet får ett test att falla.
+| Tjänst | URL |
+|---|---|
+| Frontend (Netlify) | https://rococo-hummingbird-4deb3f.netlify.app |
+| Backend (Render) | https://avancerad-fullstack-komplettering.onrender.com |
+| Hälsokontroll | https://avancerad-fullstack-komplettering.onrender.com/health |
 
 ---
 
-## Steg 4: Driftsättning i molnet
+## CI/CD-pipeline
 
-**Mål:** Appen ska vara tillgänglig via en publik URL.
+Fil: `.github/workflows/ci.yml`
 
-- Välj en molntjänst för backend (t.ex. Render, Railway, Fly.io). Skapa ett konto och en tjänst som kan köra en Docker-container eller bygga från repo.
-- Koppla ditt GitHub-repo till tjänsten så att den byggs och deployas vid push (eller använd din egen pipeline för att pusha image och trigga deploy). Sätt nödvändiga miljövariabler (databas-URL, port) i tjänstens inställningar.
-- För frontend: använd valfri hosting (t.ex. Netlify, Vercel, samma leverantör) och koppla till samma repo eller till frontend-mappen. Konfigurera så att frontend anropar backend-URL:en (miljövariabel).
-- Verifiera att den driftsatta appen fungerar: öppna frontend-URL:en och kontrollera att anrop till backend går igenom.
+**Triggers:** Alla pushar och pull requests på alla branches.
 
----
+**Jobb:**
 
-## Steg 5: Loggning och övervakning
+| Jobb | Vad händer |
+|---|---|
+| `test-api` | `npm ci` + `npm test` för backend |
+| `test-frontend` | `npm ci` + `npm test` + `npm run build` för frontend |
+| `deploy` | Triggar Render deploy hook via curl – **körs bara vid push till `main` och kräver att test-jobben är gröna** |
+| `codeql` | Statisk säkerhetsanalys med GitHub CodeQL |
+| `docs` | Genererar `openapi.json` med swagger-jsdoc och laddar upp som artefakt |
 
-**Mål:** Kunna felsöka med loggar.
+npm-cachen cachar `node_modules` mellan körningar via `actions/setup-node` med `cache: npm`, vilket gör att installationssteget går snabbare vid upprepade körningar.
 
-- I backend: Lägg till tydliga loggutskrifter (t.ex. vid start, vid fel). Använd `process.env.PORT` (och vid behov `0.0.0.0`) så att appen lyssnar korrekt i molnet.
-- (Valfritt) Lägg till en enkel hälsokontroll-endpoint, t.ex. `GET /health`, som returnerar 200.
-- Beskriv i README hur du använder hostingens loggvisning (eller loggar från pipelinen) för att felsöka om något går fel.
-
----
-
-## Steg 6: Prestanda
-
-**Mål:** Visa minst en enkel prestandaåtgärd.
-
-- Implementera minst ett av följande: **Caching i appen** (t.ex. HTTP cache-header på en endpoint, eller enkel in-memory/Redis-cache), **färre renderingar i frontend** (t.ex. `React.memo` eller lazy loading), eller **caching i GitHub Actions-workflow** (t.ex. `actions/cache` för node_modules eller Docker-lager så att bygg och deployment går snabbare). Skriv en kort rad i README om vad du gjorde.
+Netlify deployas automatiskt vid push till `main` via sin egen GitHub-koppling.
 
 ---
 
-## Steg 7: AI-verktyg i pipelinen
+## Loggning
 
-**Mål:** Ett automatiserat verktyg för kodgranskning eller säkerhet i pipelinen.
+API:et loggar varje inkommande request med tidsstämpel:
+```
+[2026-04-30T10:00:00.000Z] GET /
+```
 
-- Lägg till **CodeQL** (GitHub Actions) eller **Snyk** (eller liknande) i din CI-workflow. Steget ska köras efter checkout/install, t.ex. före eller efter testerna. Följ respektive tjänsts guide för GitHub Actions.
-- Verifiera i Actions att steget körs. Kort beskrivning i README eller i reflektionen räcker.
-
----
-
-## Steg 8: Automatiserad API-dokumentation
-
-**Mål:** API-dokumentation genereras och publiceras via pipelinen.
-
-- I backend: Sätt upp verktyg för att generera OpenAPI/Swagger från koden (t.ex. swagger-jsdoc + ett script som skriver `openapi.json`).
-- Lägg till ett steg i pipelinen som kör detta script och publicerar resultatet (t.ex. till GitHub Pages eller som artefakt). Se till att dokumentationen uppdateras vid varje relevant kodändring.
+Loggar visas i realtid under **Logs**-fliken i Render-dashboarden. Om något går fel efter en deploy är det första steget att öppna loggen och leta efter felmeddelanden eller 500-svar.
 
 ---
 
-## Steg 9: README och reflektion
+## API-dokumentation
 
-**README:** Uppdatera README med hur man kör projektet lokalt (`docker-compose up`), vilka tjänster som finns, vilka URL:er som gäller för driftsatt app, och kort beskrivning av pipelinen (triggers, steg, var deploy sker).
-
-**Reflektion (1–2 sidor):** Besvara kort dessa punkter med egna ord:
-
-1. Varför använder du Docker och docker-compose till denna app? Vad vinner du på att ha två tjänster (t.ex. frontend + API) istället för en?
-2. Vad händer i din CI/CD-pipeline när du pushar kod? Varför ska deploy bara ske om testerna är gröna?
-3. Hur har du använt loggning eller övervakning för att felsöka (eller hur skulle du göra det)?
-4. Vilken prestandaåtgärd valde du (caching, färre renderingar eller workflow-cache) och varför just den?
-5. Vilket AI- eller säkerhetsverktyg har du i pipelinen och vad gör det? Någon nackdel eller begränsning du märkt?
-6. Varför är det bra att API-dokumentationen genereras och publiceras automatiskt i pipelinen istället för att skriva den för hand?
+Genereras automatiskt i pipelinen med `swagger-jsdoc` från JSDoc-annotationer i `index.js`. Finns som nedladdningsbar artefakt (`openapi-spec`) under varje Actions-körning.
 
 ---
 
-## Inlämning
+## Reflektion
 
-- **Repo:** Länk till GitHub-repo med README, Dockerfile(s), `docker-compose.yml`, pipeline-filer och kod. Inga lösenord eller API-nycklar i koden – använd secrets/miljövariabler.
-- **Reflektion:** Lämna in enligt vad utbildaren anger (t.ex. fil i repo eller i lärplattformen).
+### 1. Varför Docker och docker-compose?
+
+Docker gör att appen beter sig likadant oavsett om den körs på min dator, en kollegas eller en server i molnet. Utan Docker kan skillnader i Node-version eller systeminställningar göra att något fungerar lokalt men kraschar i produktion.
+
+Att ha två separata tjänster i docker-compose istället för en monolitisk container ger tydlig separation – frontend och backend kan starta om, skalas och deployas oberoende av varandra. Det speglar också hur det ser ut i produktion, där Render kör API:et och Netlify kör frontend var för sig.
+
+### 2. Vad händer i CI/CD-pipelinen när du pushar?
+
+När jag pushar till main startar tre jobb parallellt: backend-tester, frontend-tester + build, och CodeQL-analys. Om alla går igenom triggas deploy-jobbet som skickar en HTTP-request till Renders deploy hook, vilket startar en ny byggprocess på Render. Netlify plockar upp ändringen via sin GitHub-koppling och bygger om frontend.
+
+Deploy ska bara ske om testerna är gröna för att inte riskera att trasig kod hamnar i produktion. Om ett test faller vet man att något är fel och det är bättre att ta reda på det innan användarna påverkas.
+
+### 3. Loggning och felsökning
+
+API:et loggar varje request med metod, path och tidsstämpel. Render samlar dessa loggar och visar dem i realtid i dashboarden. Om en deploy går igenom men något ändå är fel – t.ex. att frontend visar ett felmeddelande – är nästa steg att öppna Render-loggen och se om API:et tar emot requests och om det dyker upp några fel. Det gick faktiskt att felsöka CORS-problemet på det sättet: API:et svarade med 200 men webbläsaren blockerade svaret, vilket syntes i konsolen.
+
+### 4. Prestandaåtgärd
+
+Jag valde tre åtgärder: in-memory cache på `GET /` (5 sekunders TTL), `Cache-Control: public, max-age=60` på `/health`, och npm-cache i GitHub Actions. In-memory-cachen valdes för att `GET /` annars skapar ett nytt objekt vid varje request – med cache returneras samma svar under 5 sekunder utan onödig CPU-användning. npm-cachen i CI gör att `npm ci` hoppar över nätverksnedladdning om `package-lock.json` inte ändrats, vilket sparar 20–30 sekunder per körning.
+
+### 5. CodeQL i pipelinen
+
+CodeQL är GitHubs egna verktyg för statisk kodanalys. Det skannar koden efter kända säkerhetsproblem som SQL-injektion, XSS och osäker användning av kryptografi. Steget körs parallellt med testerna och resultaten visas under Security → Code scanning i repot.
+
+En begränsning är att CodeQL kräver Advanced Security för privata repon, vilket är en betald funktion. Det orsakade en del problem under setup. För ett litet projekt som detta är det lite överkurs, men det är standardverktyget i professionella pipelines och värt att känna till.
+
+### 6. Automatisk API-dokumentation
+
+Om dokumentationen skrivs för hand är risken stor att den snabbt blir inaktuell – det är lätt att glömma uppdatera den när en endpoint ändras. Genom att generera `openapi.json` direkt från annotationerna i koden är dokumentationen alltid synkroniserad med det faktiska beteendet. Den publiceras som artefakt i varje pipeline-körning, vilket gör att man alltid kan ladda ner dokumentationen för exakt den version som är i produktion.
+ bygga och driftsätta en fullstack-app
