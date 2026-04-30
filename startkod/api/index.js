@@ -18,6 +18,27 @@ let cachedResponse = null;
 let cacheTimestamp = 0;
 const CACHE_TTL_MS = 5000;
 
+/**
+ * @openapi
+ * /:
+ *   get:
+ *     summary: Hälsningssvar från API:et
+ *     tags: [Root]
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: API körs
+ *                 timestamp:
+ *                   type: string
+ *                   example: '2026-01-01T00:00:00.000Z'
+ */
 app.get('/', (req, res) => {
   const now = Date.now();
   if (cachedResponse && now - cacheTimestamp < CACHE_TTL_MS) {
@@ -28,6 +49,24 @@ app.get('/', (req, res) => {
   res.json(cachedResponse);
 });
 
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Hälsokontroll
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: ok
+ */
 app.get('/health', (req, res) => {
   res.set('Cache-Control', 'public, max-age=60');
   res.status(200).json({ status: 'ok' });
