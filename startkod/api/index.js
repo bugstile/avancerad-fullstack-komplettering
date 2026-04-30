@@ -13,11 +13,23 @@ app.use((req, res, next) => {
   next();
 });
 
+// In-memory cache för GET /
+let cachedResponse = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 5000;
+
 app.get('/', (req, res) => {
-  res.json({ message: 'API körs', timestamp: new Date().toISOString() });
+  const now = Date.now();
+  if (cachedResponse && now - cacheTimestamp < CACHE_TTL_MS) {
+    return res.json(cachedResponse);
+  }
+  cachedResponse = { message: 'API körs', timestamp: new Date().toISOString() };
+  cacheTimestamp = now;
+  res.json(cachedResponse);
 });
 
 app.get('/health', (req, res) => {
+  res.set('Cache-Control', 'public, max-age=60');
   res.status(200).json({ status: 'ok' });
 });
 
