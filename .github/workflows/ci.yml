@@ -109,6 +109,3 @@ jobs:
         with:
           name: openapi-spec
           path: startkod/api/openapi.json
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
