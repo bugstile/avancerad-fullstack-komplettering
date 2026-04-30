@@ -144,4 +144,3 @@ En begränsning är att CodeQL kräver Advanced Security för privata repon, vil
 ### 6. Automatisk API-dokumentation
 
 Om dokumentationen skrivs för hand är risken stor att den snabbt blir inaktuell – det är lätt att glömma uppdatera den när en endpoint ändras. Genom att generera `openapi.json` direkt från annotationerna i koden är dokumentationen alltid synkroniserad med det faktiska beteendet. Den publiceras som artefakt i varje pipeline-körning, vilket gör att man alltid kan ladda ner dokumentationen för exakt den version som är i produktion.
- bygga och driftsätta en fullstack-app
